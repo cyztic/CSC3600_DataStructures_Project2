@@ -10,17 +10,18 @@
 //*****************************************************************************************************
 //***********************************  PROGRAM DESCRIPTION  *******************************************
 //*                                                                                                   *
-//*   PROCESS: ************************************      DO THIS....                     *
+//*   PROCESS: This program first reads a one character code, then depending on the code, processes   *
+//*              values for a record list on the subsequent input lines. Records are stored in a      *
+//*              structure, and the list of structures is built by a class which controls the list.   *
 //*                                                                                                   *
 //*   USER DEFINED                                                                                    *
-//*    MODULES     :                   *
-//*                  Footer - Prints a footer to signify end of program output                        *  
-//*                  Header - Prints a header to signify start of program output                      * 
+//*    MODULES     : newPage - Prints a blank line for each blank space left on the page              *
+//*                  Footer - Prints a footer to signify end of program output                        *
+//*                  Header - Prints a header to signify start of program output                      *
 //*                  getData - Data from the input file is read into the program                      *
-//*                  main - Variables are declared, functions are called, and headers are printed     * 
-//*                  printArrays - Prints each of the arrays in separate columns                      *
-//*                                 * 
-//*                                                                                                   *  
+//*                  main - Variables are declared, functions are called, and headers are printed     *
+//*                  processData - Read each Op code character and perform the subsequent action.     *
+//*                                                                                                   *
 //*****************************************************************************************************
 #include <iostream>
 #include <fstream>
@@ -34,9 +35,9 @@ int lineCount;
 int MAXLINECOUNT;
 //*****************************************************************************************************
 void newPage(ofstream&dataOUT) {
-		// Receives – the output file
-		// Task - Insert blank lines to fill the rest of the current page
-		// Returns - Nothing
+	// Receives – the output file
+	// Task - Insert blank lines to fill the rest of the current page
+	// Returns - Nothing
 	while (lineCount < MAXLINECOUNT) {
 		dataOUT << endl;
 		lineCount++;
@@ -74,13 +75,12 @@ void Footer(ofstream &Outfile, int lineCount)
 	return;
 }
 //************************************* END OF FUNCTION FOOTER  ***************************************
-
-void createNewRecord(ofstream &dataOUT) {
-
-
-}
 void processData(ofstream&dataOUT, ifstream&dataIN) {
+		// Receives – The input and output files
+		// Task - Process each data record/op code.
+		// Returns - Nothing
 	RecordListClass RecordList;
+	bool firstPrint = true;
 
 	RecordType record;
 	int fieldNumber;
@@ -88,67 +88,60 @@ void processData(ofstream&dataOUT, ifstream&dataIN) {
 
 	char code;
 	dataIN >> ws >> code >> ws; // seed read first code
-
-	// As long as there is another code, read it in
-	while (code != 'Q') {
+		
+	while (code != 'Q') {  // As long as there is another code, read it in
 		switch (code) {
-		case 'A': 
+		case 'A':	// If the code = 'A', first read a record, then insert it into the list.
 			std::getline(dataIN, record.firstName);
 			std::getline(dataIN, record.lastName);
 			std::getline(dataIN, record.address);
 			std::getline(dataIN, record.city);
 			std::getline(dataIN, record.state);
 			std::getline(dataIN, record.zipCode);
-			RecordList.insertRecord(record);
-			break;
-		case 'D':
-			std::getline(dataIN, record.firstName);
-			std::getline(dataIN, record.lastName);
-			RecordList.deleteRecord(record);
-			if (RecordList.deleteRecord(record)) {
+			if (!RecordList.insertRecord(record)) {
 				dataOUT << endl;
 				lineCount++;
 				dataOUT << record.firstName << record.lastName;
-				dataOUT << "Successfully deleted";
+				dataOUT << " is already in list. Attempt to duplicate record failed!";
 			}
-			else {
+			break;
+		case 'D': // If the code is 'D', first read the name of the record, then delete from the list.
+			std::getline(dataIN, record.firstName);
+			std::getline(dataIN, record.lastName);
+			if (!RecordList.deleteRecord(record)) {
 				dataOUT << endl;
 				lineCount++;
 				dataOUT << "Record of " << record.firstName << record.lastName;
-				dataOUT << "not found. Attempt to delete record failed!";
+				dataOUT << " not found. Attempt to delete record failed!";
 			}
 			break;
-		case 'C':
+		case 'C': // If the op code is a 'C' change the indicated record
 			std::getline(dataIN, record.firstName);
 			std::getline(dataIN, record.lastName);
 			dataIN >> fieldNumber >> ws;
 			std::getline(dataIN, newValue);
-			if (RecordList.changeRecord(record, fieldNumber, newValue)) {
+			if (!RecordList.changeRecord(record, fieldNumber, newValue)) {
 				dataOUT << endl;
 				lineCount++;
-				dataOUT << "Change success!" << record.firstName << record.lastName;
-			}
-			else {
-				dataOUT << endl;
-				lineCount++;
-				dataOUT << "Change FAILED!" << record.firstName << record.lastName;
+				dataOUT << "Record of " << record.firstName << record.lastName;
+				dataOUT << " not found. Attempt to change record failed!";
 			}
 			break;
 		case 'P':
-			RecordList.printRecords(dataOUT, lineCount, MAXLINECOUNT);
-			newPage(dataOUT);
+			if (!firstPrint) { // After the first time printing, start a new page for each list.
+				newPage(dataOUT);
+			}
+			RecordList.printRecords(dataOUT, lineCount);
+			firstPrint = false;
 			break;
 		}
-
 		dataIN >> ws >> code >> ws; // Read in the next code
 	}
-
 }
-
 int main() {
-	// Receives – Nothing
-	// Task - Call each necessary function of the program in order
-	// Returns - Nothing
+		// Receives – Nothing
+		// Task - Call each necessary function of the program in order
+		// Returns - Nothing
 	// Declare variables used in program.	 
 	ifstream dataIN;
 	ofstream dataOUT;
@@ -156,17 +149,11 @@ int main() {
 	MAXLINECOUNT = 54;
 
 	dataIN.open("data2.txt"); // Open the file containing data.
-
 	dataOUT.open("dataOUT.doc"); // Create and open the file to write data to.		
 	Header(dataOUT); // Print data header.
-	processData(dataOUT, dataIN);
-	
-
-	newPage(dataOUT);
-	createNewRecord(dataOUT);
-
-	Footer(dataOUT,lineCount); // Print footer. 
-	
+	processData(dataOUT, dataIN); // Process each section of data from the input file.
+	newPage(dataOUT); // Insert a page break before the footer
+	Footer(dataOUT, lineCount); // Print footer. 
 	dataIN.close(); // Close input data file. 
 	dataOUT.close(); // Close output data file.
 

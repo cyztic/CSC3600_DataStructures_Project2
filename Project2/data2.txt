@@ -13,22 +13,12 @@ Hanover
 PA
 20324
 A
-AAAA        
-Epson       
-297 Sessions Street 
-Hanover     
-PA
-20324
-A
 Andrew      
 Bell        
 384 Pascal Avenue   
 Fort Worth  
 TX
 65502
-D
-Mike        
-Epson       
 A
 Terri       
 Wells       
@@ -115,7 +105,7 @@ Jacksonville
 FL
 31545
 C
-Panit       
+Janet       
 Vandyke     
 2
 Zieler      
